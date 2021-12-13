@@ -1,24 +1,47 @@
-console.log('Try npm run lint/fix!');
+import http from 'http';
+import {Server, Socket} from 'socket.io';
 
-const longString =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut aliquet diam.';
+const server = http.createServer();
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+  },
+});
 
-const trailing = 'Semicolon';
+io.on('connection', (socket: Socket) => {
+  const socketId = socket.id;
+  console.log('[connect] id: ', socketId);
 
-const why = 'am I tabbed?';
+  socket.on('join_to_room', (data: {clientId: string; roomId: string}) => {
+    const roomId = data.roomId;
+    const clientId = data.clientId;
 
-export function doSomeStuff(
-  withThis: string,
-  andThat: string,
-  andThose: string[]
-) {
-  //function on one line
-  if (!andThose.length) {
-    return false;
-  }
-  console.log(withThis);
-  console.log(andThat);
-  console.dir(andThose);
-  return;
-}
-// TODO: more examples
+    socket.join(roomId);
+    console.log(
+      `[join to room] socketId: ${socketId} clientId: ${clientId} roomId: ${roomId}`
+    );
+
+    // 1hで切断
+    setInterval(() => {
+      if (!socket.connected) {
+        return;
+      }
+      socket.disconnect();
+      console.log('connection close');
+    }, 3600000);
+  });
+
+  // TODO: クライアントからのデータ受信
+
+  // TODO: クライアントへのデータ配布
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+});
+
+const port = process.env.PORT || 5000;
+
+server.listen(port, () => {
+  console.log(`app listening on port ${port}`);
+});
